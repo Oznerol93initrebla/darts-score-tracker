@@ -1,0 +1,11 @@
+{
+  "name": "darts-score-tracker",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "node --test tests/*.test.js",
+    "serve": "python -m http.server 5500"
+  },
+  "description": "PWA offline per partite 301/501, storico e XLSX senza dipendenze esterne"
+}

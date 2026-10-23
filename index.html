@@ -1,0 +1,89 @@
+<!doctype html>
+<html lang="it">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="theme-color" content="#0b1523" />
+  <meta name="description" content="Segnapunti freccette 301/501 offline con statistiche, storico ed esportazione Excel." />
+  <meta name="color-scheme" content="dark" />
+  <link rel="icon" type="image/png" href="./icons/icon-192.png" />
+  <link rel="apple-touch-icon" href="./icons/icon-192.png" />
+  <link rel="manifest" href="./manifest.webmanifest" />
+  <link rel="stylesheet" href="./css/style.css" />
+  <title>Darts — Score Tracker</title>
+  <script type="module" src="./js/app.js"></script>
+</head>
+<body>
+  <div class="app-shell">
+    <header class="topbar">
+      <div class="brand-lockup">
+        <span class="brand-icon" aria-hidden="true">◎</span>
+        <div><p class="eyebrow">DARTS / SCORE TRACKER</p><h1>Il tuo tabellone<span class="accent">.</span></h1></div>
+      </div>
+      <span id="connection-status" class="connection" role="status">Locale · Offline-ready</span>
+    </header>
+
+    <nav class="tabbar" aria-label="Navigazione principale">
+      <button class="tab active" data-view="setup" aria-current="page"><span aria-hidden="true">＋</span> Nuova</button>
+      <button class="tab" data-view="game"><span aria-hidden="true">◎</span> Partita</button>
+      <button class="tab" data-view="history"><span aria-hidden="true">▤</span> Storico</button>
+      <button class="tab" data-view="stats"><span aria-hidden="true">▥</span> Statistiche</button>
+    </nav>
+
+    <div id="notification" role="status" aria-live="polite" class="notification" hidden></div>
+
+    <main id="main-content">
+      <section class="view" id="view-setup" aria-labelledby="setup-heading">
+        <div class="section-heading"><div><p class="eyebrow">READY • AIM • THROW</p><h2 id="setup-heading">Nuova partita</h2></div><span class="pill">UN LEG</span></div>
+        <form id="new-match-form" class="panel form-panel">
+          <div class="form-grid">
+            <label class="field">Modalità
+              <select id="initial-score" name="initialScore"><option value="301">301</option><option value="501" selected>501</option></select>
+            </label>
+            <label class="field">Regola di chiusura
+              <select id="checkout" name="checkout"><option value="straight">Straight-out</option><option value="double" selected>Double-out</option></select>
+            </label>
+            <label class="field">Numero di giocatori (1–8)
+              <select id="player-count" name="count"><option>1</option><option selected>2</option><option>3</option><option>4</option><option>5</option><option>6</option><option>7</option><option>8</option></select>
+            </label>
+          </div>
+          <div class="minor-heading"><h3>Giocatori</h3><p>Nomi uguali riutilizzano lo storico esistente.</p></div>
+          <div id="player-inputs" class="player-inputs"></div>
+          <datalist id="known-players"></datalist>
+          <button class="btn btn-primary btn-wide" type="submit">Inizia partita <span aria-hidden="true">→</span></button>
+        </form>
+        <p class="note">Un solo leg · ingresso libero (straight-in) · fino a tre freccette per turno. Le partite vengono salvate automaticamente sul dispositivo.</p>
+      </section>
+
+      <section class="view" id="view-game" aria-labelledby="game-heading" hidden>
+        <div class="section-heading"><div><p id="game-kicker" class="eyebrow">LIVE MATCH</p><h2 id="game-heading">Partita in corso</h2></div><span id="game-mode" class="pill">501 · Double-out</span></div>
+        <div id="game-content"></div>
+      </section>
+
+      <section class="view" id="view-history" aria-labelledby="history-heading" hidden>
+        <div class="section-heading"><div><p class="eyebrow">TUTTE LE PARTITE</p><h2 id="history-heading">Storico</h2></div></div>
+        <div class="panel tool-panel">
+          <h3>I tuoi dati, sul tuo dispositivo</h3>
+          <p class="subtle">Excel per le analisi; JSON per il ripristino completo. Un file Excel non è un backup importabile.</p>
+          <div class="tool-buttons">
+            <button class="btn btn-secondary" id="export-all" type="button">Esporta storico Excel</button>
+            <button class="btn btn-secondary" id="backup" type="button">Scarica backup JSON</button>
+            <button class="btn btn-ghost" id="restore-trigger" type="button">Ripristina da JSON</button>
+            <button class="btn btn-ghost" id="persistent-storage" type="button">Proteggi memoria locale</button>
+            <input type="file" id="backup-file" accept=".json,application/json" hidden />
+          </div>
+          <p class="note warning">Attenzione: ripristinare un backup sostituisce tutto lo storico presente su questo dispositivo.</p>
+        </div>
+        <div id="history-content" class="stack"></div>
+      </section>
+
+      <section class="view" id="view-stats" aria-labelledby="stats-heading" hidden>
+        <div class="section-heading"><div><p class="eyebrow">YOUR NUMBERS</p><h2 id="stats-heading">Statistiche</h2></div></div>
+        <p class="note">Le statistiche includono solo partite concluse. La media sulle tre freccette usa i punti accreditati, considerando un bust come zero.</p>
+        <div id="stats-content" class="stack"></div>
+      </section>
+    </main>
+    <footer>Versione 1.0.0 · Senza account · Dati in locale · <span id="storage-status">Storage browser</span></footer>
+  </div>
+</body>
+</html>

@@ -1,4 +1,4 @@
-# Darts Score Tracker v1.0.0
+# Darts Score Tracker v1.0.1
 
 PWA **301 / 501** con HTML, CSS e JavaScript vanilla, da 1 a 8 giocatori, una sola leg, ingresso `straight-in`, uscita `straight-out` oppure `double-out`. I dati vengono salvati in **IndexedDB**; il file Excel `.xlsx` è prodotto direttamente in JavaScript, senza librerie CDN o pacchetti npm.
 
@@ -36,7 +36,7 @@ Le partite su PC e smartphone **non si sincronizzano automaticamente**. Per spos
 2. **Partita**: per ciascuno dei tre tiri seleziona il settore da **1 a 20**, **Bull esterno 25**, **Bull interno 50** o **MISS**; per i settori numerici scegli S, D o T. I bull non hanno moltiplicatore.
 3. Leggi l'anteprima del punteggio e premi **Conferma turno**. La conferma è abilitata con tre freccette, oppure prima in caso di **bust** o **vittoria**.
 4. In caso di bust il punteggio torna a quello iniziale del turno; **Annulla ultimo turno** ripristina solo l'ultima registrazione, inclusa un'eventuale chiusura.
-5. **Storico**: riprendi una partita non conclusa, visualizza ogni turno e scarica un file Excel singolo o globale.
+5. **Storico**: riprendi una partita non conclusa, visualizza i turni, seleziona una o più partite tramite checkbox e scaricale in Excel o JSON; resta disponibile anche Excel della singola partita.
 6. **Statistiche**: vengono conteggiate **solo le partite concluse**. Puoi rinominare un profilo senza perdere lo storico.
 
 ### Regole definite
@@ -52,7 +52,7 @@ Le partite su PC e smartphone **non si sincronizzano automaticamente**. Per spos
 
 **Excel `.xlsx`**: file con fogli `Giocatori`, `Partite`, `Turni`, `Tiri`, `Statistiche`. L'esportatore è un modulo JavaScript standalone (`js/export.js`) che crea un vero file **OOXML/XLSX**, con un contenitore ZIP non compresso e celle di testo come stringhe; non necessita di rete e non tratta i nomi come formule.
 
-**Backup `.json`**: esportazione di tutte le tabelle di IndexedDB. Il ripristino controlla l'integrità dell'intero storico (giocatori, sequenza tiri, punteggi e vincitore) **prima** di sostituire i dati; un backup incompatibile/non coerente viene respinto. **Ripristino = sostituzione**, non fusione. La dimensione di importazione massima gestita dall'interfaccia è 25 MB.
+**Backup completo `.json`**: esportazione di tutte le tabelle di IndexedDB. **JSON selezionate**: esporta esclusivamente partite scelte, loro turni e giocatori partecipanti, mantenendo `schemaVersion: 1` e un formato ripristinabile. Il ripristino controlla l'integrità dell'intero storico (giocatori, sequenza tiri, punteggi e vincitore) **prima** di sostituire i dati; un backup incompatibile/non coerente viene respinto. **Ripristino = sostituzione**, non fusione. La dimensione di importazione massima gestita dall'interfaccia è 25 MB.
 
 Lo storage locale non è garantito per sempre: eliminare dati sito, navigare in incognito, cambiare browser/origin o disinstallare la PWA può far sparire lo storico. Usa **Proteggi memoria locale** (quando supportato dal browser) e salva regolarmente un backup JSON su altro supporto. Il pulsante non annulla la necessità di un backup.
 
@@ -104,3 +104,7 @@ Il workbook di test è stato verificato durante lo sviluppo anche con `openpyxl`
 ## 8. Manutenzione e aggiornamenti
 
 La cache statica è identificata dalla costante `CACHE` in `sw.js`: se cambi i file distribuiti, modifica la versione della cache per forzare l'aggiornamento. **Non cancellare IndexedDB** durante un aggiornamento. Per esportare/ripristinare file JSON il campo `schemaVersion` è attualmente `1`: qualunque modifica incompatibile richiederà una migrazione.
+
+## Novità v1.0.1
+
+Nella scheda Storico, spunta le partite desiderate oppure usa **Seleziona tutte / Deseleziona tutte**. **Excel selezionate** produce un unico XLSX con i soli dati delle partite scelte; le statistiche del foglio sono calcolate soltanto sulle partite selezionate e concluse. **JSON selezionate** produce un JSON autonomo, contenente solo giocatori coinvolti, partite e turni scelti. **Scarica backup JSON** produce sempre il backup completo, a prescindere dalla selezione. Il ripristino JSON **sostituisce tutto il database locale** anche quando il JSON è parziale: non importa o unisce i dati. La selezione non viene salvata fra riavvii. Nessuna migrazione di IndexedDB necessaria.

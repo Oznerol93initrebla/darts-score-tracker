@@ -110,6 +110,19 @@ function xlsxBytes(sheets) {
   return createZip(files);
 }
 
+/** Estrae un insieme coerente di partite, partecipanti e relativi turni. */
+export function selectMatchData(data, matchIds) {
+  const ids = new Set(matchIds);
+  if (!ids.size) throw new Error('Seleziona almeno una partita.');
+  const matches = data.matches.filter(m => ids.has(m.id));
+  if (matches.length !== ids.size) throw new Error('Una o più partite selezionate non esistono.');
+  const matchSet = new Set(matches.map(m => m.id));
+  const playerSet = new Set(matches.flatMap(m => m.playerIds));
+  const players = data.players.filter(p => playerSet.has(p.id));
+  if (players.length !== playerSet.size) throw new Error('Giocatori mancanti nello storico.');
+  return {players, matches, turns:data.turns.filter(t => matchSet.has(t.matchId))};
+}
+
 export function buildWorkbook(data, matchId = null) {
   const matches = data.matches.filter(m=>!matchId || m.id===matchId)
     .sort((a,b)=>a.createdAt.localeCompare(b.createdAt));
@@ -156,8 +169,8 @@ export function exportXlsx(data, matchId = null) {
   downloadBytes(bytes,`darts_${matchId?'partita':'storico'}_${day}.xlsx`,
     'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
 }
-export function exportBackup(data) {
+export function exportBackup(data, selected = false) {
   const payload={app:'Darts Score Tracker',schemaVersion:1,exportedAt:new Date().toISOString(),...data};
   const bytes=enc.encode(JSON.stringify(payload,null,2));
-  downloadBytes(bytes,`darts_backup_${new Date().toISOString().slice(0,10)}.json`,'application/json');
+  downloadBytes(bytes,`darts_${selected?'selezionate':'backup_completo'}_${new Date().toISOString().slice(0,10)}.json`,'application/json');
 }

@@ -1,5 +1,5 @@
 // Cache indipendente dai dati delle partite: i dati rimangono in IndexedDB.
-const CACHE = 'darts-static-v1.0.0';
+const CACHE = 'darts-static-v1.0.1';
 const ASSETS = [
   './','./index.html','./css/style.css','./js/app.js','./js/db.js',
   './js/engine.js','./js/export.js','./manifest.webmanifest',

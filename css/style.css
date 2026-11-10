@@ -30,3 +30,9 @@ select:disabled,input:disabled{opacity:.52;cursor:not-allowed}
 footer{border-top:1px solid var(--border);margin-top:38px;padding-top:18px;text-align:center;color:#9fb2bf;font-size:12px;line-height:1.6}
 @media(max-width:650px){.app-shell{padding:16px 13px 34px}.brand-icon{height:44px;width:44px;font-size:30px}.connection{font-size:11px}.tabbar{position:sticky;top:5px;z-index:10;box-shadow:0 9px 30px #030b15bd}.tab{font-size:12px}.tab span{display:block;margin:0;font-size:20px}.section-heading{align-items:center}.form-grid,.player-inputs{grid-template-columns:1fr}.score-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.dart-row{grid-template-columns:42px minmax(0,1.5fr) minmax(0,.9fr) 43px;gap:7px;padding:10px 8px}.dart-row select{padding:10px 5px;font-size:15px}.dart-points{font-size:19px}.dart-label{font-size:11px}.stat-grid{grid-template-columns:repeat(2,1fr)}.turn-title h3{font-size:20px}.panel{padding:17px}.actions{display:grid;grid-template-columns:1fr 1fr}.actions #confirm-turn{grid-column:1/-1}.tool-buttons{display:grid;grid-template-columns:1fr}}
 @media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}*,*:before,*:after{transition:none!important;animation:none!important}}
+
+/* v1.0.1 — scelta partite da esportare */
+.selection-tools{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}
+.match-select{display:inline-flex;align-items:center;gap:9px;flex:0 0 auto;font-size:12px;font-weight:750;color:var(--text);cursor:pointer;padding:6px 8px;border:1px solid var(--border);border-radius:10px}
+.match-select input{width:20px;height:20px;margin:0;accent-color:var(--accent);cursor:pointer}
+.history-top .match-select{order:-1}

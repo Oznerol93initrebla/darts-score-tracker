@@ -1,9 +1,9 @@
 import { evaluateTurn, computeStats } from './engine.js';
 import { getAllData, createMatch, saveDraft, commitTurn, undoLastTurn,
   renamePlayer, replaceWithBackup } from './db.js';
-import { exportXlsx, exportBackup } from './export.js';
+import { exportXlsx, exportBackup, selectMatchData } from './export.js';
 
-const state = {data:{players:[],matches:[],turns:[]},activeId:null,detailId:null,busy:false,view:'setup'};
+const state = {data:{players:[],matches:[],turns:[]},activeId:null,detailId:null,busy:false,view:'setup',selectedIds:new Set()};
 const $ = id => document.getElementById(id);
 const safe = value => String(value ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;')
   .replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
@@ -27,6 +27,7 @@ function view(name){
 }
 async function refresh(){
   state.data=await getAllData();
+  state.selectedIds=new Set([...state.selectedIds].filter(id=>state.data.matches.some(m=>m.id===id)));
   renderSetupKnownNames();renderGame();renderHistory();renderStats();
 }
 function setupPlayerFields(){
@@ -156,9 +157,18 @@ function updateDraftPreview(shouldPersist=true){
     saveDraft(match.id,match.turnCounter,fresh).catch(e=>notify(`Bozza non salvata: ${e.message}`,true));
   }
 }
+function updateSelectionStatus(){
+  const count=state.selectedIds.size;
+  $('selection-status').textContent=`${count} ${count===1?'partita selezionata':'partite selezionate'} su ${state.data.matches.length}`;
+  $('export-all').disabled=count===0;
+  $('export-selected-json').disabled=count===0;
+  $('select-all').disabled=state.data.matches.length===0 || count===state.data.matches.length;
+  $('select-none').disabled=count===0;
+}
+function selectedData(){ return selectMatchData(state.data, state.selectedIds); }
 function renderHistory(){
   const host=$('history-content');
-  $('export-all').disabled=state.data.matches.length===0;
+  updateSelectionStatus();
   const matches=[...state.data.matches].sort((a,b)=>b.createdAt.localeCompare(a.createdAt));
   if(!matches.length){host.innerHTML='<div class="panel empty"><h3>Nessuna partita archiviata</h3><p>Le tue partite appariranno qui non appena ne inizierai una.</p></div>';return;}
   host.innerHTML=matches.map(m=>{
@@ -171,7 +181,7 @@ function renderHistory(){
       <td>${t.rawPoints}</td><td>${t.creditedPoints}</td><td>${t.endScore}</td><td>${t.bust?'Bust':t.win?'Vittoria':'OK'}</td></tr>`).join('')+
       `</tbody></table></div>`:'';
     return `<article class="history-card">
-      <div class="history-top"><div><p class="eyebrow">${safe(date(m.createdAt))}</p>
+      <div class="history-top"><label class="match-select"><input type="checkbox" data-match-select="${safe(m.id)}" ${state.selectedIds.has(m.id)?'checked':''} aria-label="Seleziona partita ${safe(date(m.createdAt))}: ${safe(names)}" /><span>Seleziona</span></label><div><p class="eyebrow">${safe(date(m.createdAt))}</p>
         <h3>${m.initialScore} · ${m.checkout==='double'?'Double-out':'Straight-out'}</h3>
         <p class="meta">${names}</p><p class="meta">${m.status==='completed'?`Vincitore: ${safe(playerName(m.winnerId))}`:'Partita sospesa / in corso'} · ${m.turnCounter} turni</p></div>
         <span class="badge ${m.status==='in_progress'?'live':''}">${m.status==='completed'?'Conclusa':'In corso'}</span></div>
@@ -211,7 +221,10 @@ async function handleClick(event){
     if(action.dataset.action==='export-match')exportXlsx(state.data,id);
     return;
   }
-  if(event.target.closest('#export-all')){exportXlsx(state.data);return;}
+  if(event.target.closest('#select-all')){state.selectedIds=new Set(state.data.matches.map(m=>m.id));renderHistory();return;}
+  if(event.target.closest('#select-none')){state.selectedIds.clear();renderHistory();return;}
+  if(event.target.closest('#export-all')){exportXlsx(selectedData());return;}
+  if(event.target.closest('#export-selected-json')){exportBackup(selectedData(),true);return;}
   if(event.target.closest('#backup')){exportBackup(state.data);return;}
   if(event.target.closest('#persistent-storage')){
     if(!navigator.storage?.persist){notify('Il browser non supporta la richiesta di storage persistente. Usa backup JSON.',true);return;}
@@ -271,7 +284,7 @@ async function restoreFile(event){
   try {
     const contents=JSON.parse(await file.text());
     await replaceWithBackup(contents);
-    state.activeId=null;state.detailId=null;await refresh();
+    state.activeId=null;state.detailId=null;state.selectedIds.clear();await refresh();
     const latest=[...state.data.matches].sort((a,b)=>b.createdAt.localeCompare(a.createdAt))[0];
     state.activeId=latest?.id||null;
     renderGame();view('history');notify('Backup verificato e ripristinato.');
@@ -291,6 +304,11 @@ async function init(){
   document.addEventListener('click',e=>{handleClick(e).catch(err=>notify(err.message,true));});
   document.addEventListener('submit',e=>{handleSubmit(e).catch(err=>notify(err.message,true));});
   document.addEventListener('change',event=>{
+    if(event.target.matches('[data-match-select]')){
+      const id=event.target.dataset.matchSelect;
+      if(event.target.checked)state.selectedIds.add(id);else state.selectedIds.delete(id);
+      updateSelectionStatus();
+    }
     if(event.target.id==='player-count')setupPlayerFields();
     if(event.target.matches('[data-dart-sector], [data-dart-mult]')){
       if(event.target.matches('[data-dart-sector]') && !event.target.value){

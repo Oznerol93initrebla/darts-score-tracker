@@ -1,5 +1,5 @@
 /** Motore puro 301/501: nessuna dipendenza dal DOM o dal database. */
-export const APP_VERSION = '1.0.0';
+export const APP_VERSION = '1.0.1';
 export const MAX_PLAYERS = 8;
 export const MODE_SCORES = [301, 501];
 export const CHECKOUTS = ['straight', 'double'];

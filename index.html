@@ -64,15 +64,18 @@
         <div class="section-heading"><div><p class="eyebrow">TUTTE LE PARTITE</p><h2 id="history-heading">Storico</h2></div></div>
         <div class="panel tool-panel">
           <h3>I tuoi dati, sul tuo dispositivo</h3>
-          <p class="subtle">Excel per le analisi; JSON per il ripristino completo. Un file Excel non è un backup importabile.</p>
+          <p class="subtle">Seleziona le partite per esportarle in Excel o JSON. Il backup completo JSON resta disponibile indipendentemente dalla selezione.</p>
           <div class="tool-buttons">
-            <button class="btn btn-secondary" id="export-all" type="button">Esporta storico Excel</button>
+            <button class="btn btn-secondary" id="export-all" type="button">Excel selezionate</button>
+            <button class="btn btn-secondary" id="export-selected-json" type="button">JSON selezionate</button>
             <button class="btn btn-secondary" id="backup" type="button">Scarica backup JSON</button>
             <button class="btn btn-ghost" id="restore-trigger" type="button">Ripristina da JSON</button>
             <button class="btn btn-ghost" id="persistent-storage" type="button">Proteggi memoria locale</button>
             <input type="file" id="backup-file" accept=".json,application/json" hidden />
           </div>
-          <p class="note warning">Attenzione: ripristinare un backup sostituisce tutto lo storico presente su questo dispositivo.</p>
+          <p class="note" id="selection-status" aria-live="polite">0 partite selezionate</p>
+          <div class="selection-tools"><button class="btn btn-ghost small-btn" id="select-all" type="button">Seleziona tutte</button><button class="btn btn-ghost small-btn" id="select-none" type="button">Deseleziona tutte</button></div>
+          <p class="note warning">Attenzione: anche ripristinare un JSON di partite selezionate sostituisce tutto lo storico locale, non lo unisce. Conserva un backup completo prima del ripristino.</p>
         </div>
         <div id="history-content" class="stack"></div>
       </section>
@@ -83,7 +86,7 @@
         <div id="stats-content" class="stack"></div>
       </section>
     </main>
-    <footer>Versione 1.0.0 · Senza account · Dati in locale · <span id="storage-status">Storage browser</span></footer>
+    <footer>Versione 1.0.1 · Senza account · Dati in locale · <span id="storage-status">Storage browser</span></footer>
   </div>
 </body>
 </html>

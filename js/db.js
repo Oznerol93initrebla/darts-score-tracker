@@ -1,4 +1,5 @@
 import { CHECKOUTS, MODE_SCORES, MAX_PLAYERS, evaluateTurn, normalizeDart } from './engine.js';
+import { mergeValidatedArchives } from './merge.js';
 
 const NAME = 'darts-score-tracker-v1';
 const VERSION = 1;
@@ -274,4 +275,53 @@ export async function replaceWithBackup(raw) {
   }
   await transactionDone(tx);
   return safe;
+}
+
+
+/** Prepara l'unione dei backup, senza accesso al database e senza effetti collaterali. */
+export function prepareArchiveMerge(current, rawBackups) {
+  if (!Array.isArray(rawBackups) || rawBackups.length===0) throw new Error('Nessun file JSON selezionato.');
+  const validated=rawBackups.map((entry,i)=>{
+    try {return validateBackup(entry);}
+    catch(error) {throw new Error(`File ${i+1}: ${error.message}`);}
+  });
+  const merged=mergeValidatedArchives(current,validated);
+  // Validazione completa anche DOPO la riconciliazione degli ID dei giocatori.
+  const safe=validateBackup({app:'Darts Score Tracker',schemaVersion:1,...merged.data});
+  return {data:safe,summary:merged.summary};
+}
+
+/** Salva l'unione nella STESSA transazione IndexedDB: nessuna sostituzione dello storico. */
+export async function importBackups(rawBackups) {
+  // Rigetta dati incompatibili prima ancora di aprire una transazione di scrittura.
+  const validated=rawBackups.map((entry,i)=>{
+    try{return validateBackup(entry);}
+    catch(error){throw new Error(`File ${i+1}: ${error.message}`);}
+  });
+  if (!validated.length) throw new Error('Nessun backup da importare.');
+  const db=await openDb();
+  const tx=db.transaction(['players','matches','turns'],'readwrite');
+  const done=transactionDone(tx);
+  try {
+    const [players,matches,turns]=await Promise.all(['players','matches','turns']
+      .map(kind=>requestResult(tx.objectStore(kind).getAll())));
+    const {data,summary}=mergeValidatedArchives({players,matches,turns},validated);
+    validateBackup({app:'Darts Score Tracker',schemaVersion:1,...data});
+    const existingPlayers=new Set(players.map(x=>x.id));
+    const existingMatches=new Map(matches.map(x=>[x.id,x]));
+    const existingTurns=new Set(turns.map(x=>x.id));
+    for (const player of data.players) if (!existingPlayers.has(player.id)) tx.objectStore('players').add(player);
+    for (const match of data.matches) {
+      const previous=existingMatches.get(match.id);
+      if (!previous) tx.objectStore('matches').add(match);
+      else if (match.turnCounter > previous.turnCounter) tx.objectStore('matches').put(match);
+    }
+    for (const turn of data.turns) if (!existingTurns.has(turn.id)) tx.objectStore('turns').add(turn);
+    await done;
+    return summary;
+  } catch(error) {
+    try {tx.abort();} catch { /* La transazione potrebbe essere già terminata. */ }
+    await done.catch(()=>{});
+    throw error;
+  }
 }

@@ -1,8 +1,8 @@
 // Cache indipendente dai dati delle partite: i dati rimangono in IndexedDB.
-const CACHE = 'darts-static-v1.0.1';
+const CACHE = 'darts-static-v1.0.2';
 const ASSETS = [
   './','./index.html','./css/style.css','./js/app.js','./js/db.js',
-  './js/engine.js','./js/export.js','./manifest.webmanifest',
+  './js/engine.js','./js/merge.js','./js/export.js','./manifest.webmanifest',
   './icons/icon-192.png','./icons/icon-512.png',
 ];
 self.addEventListener('install', event => {

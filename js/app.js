@@ -1,6 +1,6 @@
 import { evaluateTurn, computeStats } from './engine.js';
 import { getAllData, createMatch, saveDraft, commitTurn, undoLastTurn,
-  renamePlayer, replaceWithBackup } from './db.js';
+  renamePlayer, replaceWithBackup, prepareArchiveMerge, importBackups } from './db.js';
 import { exportXlsx, exportBackup, selectMatchData } from './export.js';
 
 const state = {data:{players:[],matches:[],turns:[]},activeId:null,detailId:null,busy:false,view:'setup',selectedIds:new Set()};
@@ -195,7 +195,13 @@ function renderHistory(){
 function renderStats(){
   const stats=computeStats(state.data), host=$('stats-content');
   if(!stats.length){host.innerHTML='<div class="panel empty"><h3>Ancora nessun giocatore</h3><p>Le statistiche appariranno qui.</p></div>';return;}
-  host.innerHTML=stats.map(s=>`<article class="player-stat">
+  const completed=state.data.matches.filter(m=>m.status==='completed').length;
+  const overview=`<div class="panel archive-summary"><h3>Archivio complessivo</h3>
+    <p class="subtle">Partite registrate sul dispositivo, comprese quelle importate da JSON.</p>
+    <div class="stat-grid">${statTile('Partite concluse',completed)}
+      ${statTile('Partite totali',state.data.matches.length)}
+      ${statTile('Giocatori',state.data.players.length)}</div></div>`;
+  host.innerHTML=overview+stats.map(s=>`<article class="player-stat">
     <div class="stat-header"><h3>${safe(s.name)}</h3><span class="pill">${s.played} PARTITE</span></div>
     <div class="stat-grid">
       ${statTile('Vittorie',s.wins)}${statTile('Percentuale vittorie',fmt(s.winRate)+'%')}
@@ -233,7 +239,8 @@ async function handleClick(event){
     notify(accepted?'Storage persistente autorizzato. Esegui comunque backup periodici.':'Il browser non ha concesso lo storage persistente. Esegui backup JSON periodici.',!accepted);
     return;
   }
-  if(event.target.closest('#restore-trigger')){$('backup-file').click();return;}
+  if(event.target.closest('#import-trigger')){if(!state.busy)$('import-files').click();return;}
+  if(event.target.closest('#restore-trigger')){if(!state.busy)$('backup-file').click();return;}
   if(event.target.closest('#undo-turn')){
     const m=activeMatch();if(!m||!m.turnCounter||state.busy)return;
     if(!confirm('Annullare l’ultimo turno confermato?'))return;
@@ -275,6 +282,39 @@ async function handleSubmit(event){
     catch(e){notify(e.message,true);}
   }
 }
+
+/** Importa più JSON in un'unica operazione: se un file non è valido, non si scrive nulla. */
+async function importFiles(event){
+  const files=[...event.target.files];event.target.value='';
+  if(!files.length)return;
+  if(state.busy)return;
+  if(files.length>100){notify('Seleziona al massimo 100 file per importazione.',true);return;}
+  if(files.some(f=>!f.name.toLocaleLowerCase().endsWith('.json'))){
+    notify('Sono accettati soltanto file con estensione .json.',true);return;
+  }
+  if(files.some(f=>f.size>25*1024*1024)||files.reduce((n,f)=>n+f.size,0)>100*1024*1024){
+    notify('Limite: 25 MB per file e 100 MB complessivi.',true);return;
+  }
+  state.busy=true;
+  try {
+    const backups=[];
+    for(const file of files){
+      try{backups.push(JSON.parse(await file.text()));}
+      catch{throw new Error(`JSON illeggibile: ${file.name}`);}
+    }
+    // Mostra il risultato previsto, senza toccare IndexedDB.
+    const preview=prepareArchiveMerge(state.data,backups).summary;
+    const message=`File: ${files.length}\nNuove partite: ${preview.newMatches}\nPartite aggiornate: ${preview.updatedMatches}\nGià presenti: ${preview.skippedMatches}\nNuovi giocatori: ${preview.newPlayers}\n\nConfermi l'importazione nello storico locale?`;
+    if(!confirm(message))return;
+    const summary=await importBackups(backups);
+    await refresh();
+    view('stats');
+    // view() elimina le notifiche: ripristina il riepilogo dopo il cambio schermata.
+    notify(`Importazione completata: ${summary.newMatches} nuove partite, ${summary.updatedMatches} aggiornate, ${summary.skippedMatches} già presenti. Statistiche aggiornate.`);
+  }catch(error){notify(`Importazione annullata: ${error.message}`,true);}
+  finally{state.busy=false;}
+}
+
 async function restoreFile(event){
   const file=event.target.files?.[0];event.target.value='';
   if(!file)return;
@@ -319,6 +359,7 @@ async function init(){
     }
   });
   $('backup-file').addEventListener('change',restoreFile);
+  $('import-files').addEventListener('change',importFiles);
   window.addEventListener('online',connection);window.addEventListener('offline',connection);
   setupPlayerFields();connection();
   try {

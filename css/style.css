@@ -36,3 +36,5 @@ footer{border-top:1px solid var(--border);margin-top:38px;padding-top:18px;text-
 .match-select{display:inline-flex;align-items:center;gap:9px;flex:0 0 auto;font-size:12px;font-weight:750;color:var(--text);cursor:pointer;padding:6px 8px;border:1px solid var(--border);border-radius:10px}
 .match-select input{width:20px;height:20px;margin:0;accent-color:var(--accent);cursor:pointer}
 .history-top .match-select{order:-1}
+
+.archive-summary h3{margin-bottom:7px}.archive-summary .stat-grid{margin-top:14px}
